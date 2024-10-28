@@ -58,6 +58,16 @@ class Repo(object):
 
         return "%s/%s" % (self.server_url.rstrip('/'), 'api/v2.1/repos/%s/file/' % self.repo_id)
 
+    def _repo_file_upload_link_url(self):
+        if self._by_api_token:
+            return  "%s/%s" % (self.server_url.rstrip('/'), "/api/v2.1/via-repo-token/upload-link/")
+
+    def _repo_file_download_link_url(self):
+        if self._by_api_token:
+            return  "%s/%s" % (self.server_url.rstrip('/'), "/api/v2.1/via-repo-token/download-link/")
+
+        
+
     def get_repo_details(self):
         url = self._repo_info_url()
         response = requests.get(url, headers=self.headers, timeout=self.timeout)
@@ -70,11 +80,13 @@ class Repo(object):
             'last_modified': repo.get('last_modified'),
         }
 
-    def list_dir(self, dir_path='/'):
+    def list_dir(self, dir_path='/', file_type='d', recursive=0):
         url = self._repo_dir_url()
         params = {
             'p': dir_path,
-            'path': dir_path
+            'path': dir_path,
+            'type': file_type,
+            'recursive': recursive,
         }
         response = requests.get(url, params=params, headers=self.headers, timeout=self.timeout)
         resp = parse_response(response)
@@ -149,6 +161,22 @@ class Repo(object):
         url = self._repo_file_url()
         params = {'path': path} if '/via-repo-token' in url else {'p': path}
         response = requests.delete(url, params=params, headers=self.headers, timeout=self.timeout)
+        return parse_response(response)
+
+    def get_upload_link(self, path="/", from_="api", replace="false"):
+        url = self._repo_file_upload_link_url()
+        params = {
+            'path': path,
+            'from': from_,
+            'replace': replace,
+        }
+        response = requests.get(url, headers=self.headers, params=params)
+        return parse_response(response)
+
+    def get_download_link(self, file_path):
+        url = self._repo_file_download_link_url()
+        params = {'path': file_path}
+        response = requests.get(url, headers=self.headers, params=params)
         return parse_response(response)
 
 
